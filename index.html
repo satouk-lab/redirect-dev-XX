@@ -1,0 +1,346 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>In Dev Lab XX</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #121212;
+            color: #fff;
+        }
+
+        .card {
+            text-align: center;
+            padding: 2rem;
+            background: #1e1e1e;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            max-width: 340px;
+            width: 90%;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80%;
+            margin: 0 auto 12px auto;
+        }
+
+        input {
+            padding: 10px 40px 10px 10px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #2d2d2d;
+            color: #fff;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .toggle-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+        }
+
+        .toggle-btn:hover {
+            color: #fff;
+            background: none;
+        }
+
+        button#btn-enter {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            background: #007acc;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        button#btn-enter:hover {
+            background: #005999;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #qr-container {
+            margin-top: 15px;
+            display: inline-block;
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        a {
+            color: #4daafc;
+            word-break: break-all;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 13px;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .status-standby {
+            background: #6c757d;
+            color: #fff;
+        }
+
+        .status-online {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .status-offline {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h2>In Dev Lab XX</h2>
+        <div id="status-container">
+            <span id="status-badge" class="status-badge status-standby">● STANDBY</span>
+            <div id="update-time" class="timestamp">更新日時を取得中...</div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
+
+        <div id="login-form">
+            <p>Passcode</p>
+            <div class="input-group">
+                <input type="password" id="pass-input" placeholder="****">
+                <button type="button" id="btn-toggle-pass" class="toggle-btn" onclick="togglePassword()">👁️</button>
+            </div>
+            <button id="btn-enter" onclick="checkPass()">Enter</button>
+            <p id="error-msg" class="error hidden"></p>
+        </div>
+
+        <div id="content" class="hidden">
+            <p>Access Link</p>
+
+            <div id="qr-container"></div><br>
+            <a id="access-link" href="#" target="_blank" rel="noopener"></a>
+        </div>
+    </div>
+
+    <script>
+        const APP_VERSION = "v3.3.0 Security Refactored";
+        console.log("System Version:", APP_VERSION);
+
+        const ENC_GIST_URL = "397c91f7d5a600a314529f282f85b0226cff6b5b4ccc323c7a0f897f975ceb378d8f8f20ac9740cdae82f91538904771d9d842ca59a5cfb1d88c3ef46ec9d4f9279f24461a6f13ebd3041c9874adb3a15f7a1eceda2797b95305c3d3b021f49fad276b8dcc5a561f45d5578896ed5c5e";
+        const LAST_BUILD_TIME = "2026/11/12 14:33:34";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const timeElem = document.getElementById('update-time');
+            if (LAST_BUILD_TIME && LAST_BUILD_TIME !== "----/--/-- --:--:--") {
+                timeElem.innerText = "更新: " + LAST_BUILD_TIME + " (JST)";
+            } else {
+                timeElem.innerText = "更新日時: 不明";
+            }
+        });
+
+        function togglePassword() {
+            const passInput = document.getElementById('pass-input');
+            const toggleBtn = document.getElementById('btn-toggle-pass');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.innerText = '🙈';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.innerText = '👁️';
+            }
+        }
+
+        function setStatus(statusType, labelText) {
+            const badge = document.getElementById('status-badge');
+            badge.innerText = labelText;
+            badge.className = "status-badge status-" + statusType;
+        }
+
+        function hexToBytes(hex) {
+            if (!hex || hex.length % 2 !== 0) {
+                throw new Error("Invalid Hex String");
+            }
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < bytes.length; i++) {
+                bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+            }
+            return bytes;
+        }
+
+        async function decryptData(encHex, ivBytes, pass) {
+            const passBuffer = new TextEncoder().encode(pass);
+            const keyHash = await crypto.subtle.digest('SHA-256', passBuffer);
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw', keyHash, { name: 'AES-CBC' }, false, ['decrypt']
+            );
+
+            const cipherBytes = hexToBytes(encHex);
+            const decryptedBuffer = await crypto.subtle.decrypt(
+                { name: 'AES-CBC', iv: ivBytes },
+                cryptoKey,
+                cipherBytes
+            );
+
+            return new TextDecoder().decode(decryptedBuffer);
+        }
+
+        async function checkPass() {
+            const btn = document.getElementById('btn-enter');
+            const pass = document.getElementById('pass-input').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+
+            if (!pass) return;
+            btn.disabled = true;
+            errorMsg.classList.add('hidden');
+
+            const genericError = "パスコードが正しくないか、サーバーが起動していません。";
+
+            try {
+                if (!ENC_GIST_URL || ENC_GIST_URL.length <= 32) {
+                    throw new Error(genericError);
+                }
+
+                const gistIvHex = ENC_GIST_URL.substring(0, 32);
+                const gistEncHex = ENC_GIST_URL.substring(32);
+                const gistIvBytes = hexToBytes(gistIvHex);
+
+                let gistUrl = "";
+                try {
+                    gistUrl = await decryptData(gistEncHex, gistIvBytes, pass);
+                } catch {
+                    throw new Error(genericError);
+                }
+
+                let res;
+                try {
+                    res = await fetch(gistUrl + "?_=" + Date.now());
+                    if (!res.ok) throw new Error(genericError);
+                } catch {
+                    throw new Error(genericError);
+                }
+
+                const { ENC_DATA, ENC_IV, updatedAt } = await res.json();
+
+                if (updatedAt) {
+                    document.getElementById('update-time').innerText = "更新: " + updatedAt + " (JST)";
+                }
+
+                let realUrl = "";
+                try {
+                    realUrl = await decryptData(ENC_DATA, hexToBytes(ENC_IV), pass);
+                } catch {
+                    throw new Error(genericError);
+                }
+
+                const imgTester = new Image();
+                let isHandled = false;
+
+                const timer = setTimeout(() => {
+                    if (!isHandled) {
+                        isHandled = true;
+                        btn.disabled = false;
+                        setStatus("offline", "● OFFLINE");
+                        errorMsg.innerText = "エラー: サーバーが応答しません";
+                        errorMsg.classList.remove('hidden');
+                    }
+                }, 3000);
+
+                imgTester.onload = () => {
+                    if (isHandled) return;
+                    isHandled = true;
+                    clearTimeout(timer);
+                    btn.disabled = false;
+
+                    setStatus("online", "● ONLINE");
+                    document.getElementById('login-form').classList.add('hidden');
+
+                    // ローカルでQRコードを生成描画
+                    const qrContainer = document.getElementById('qr-container');
+                    qrContainer.innerHTML = "";
+                    new QRCode(qrContainer, {
+                        text: realUrl,
+                        width: 200,
+                        height: 200
+                    });
+
+                    const linkElem = document.getElementById('access-link');
+                    linkElem.href = realUrl;
+                    linkElem.innerText = realUrl;
+                    document.getElementById('content').classList.remove('hidden');
+                };
+
+                imgTester.onerror = () => {
+                    if (isHandled) return;
+                    isHandled = true;
+                    clearTimeout(timer);
+                    btn.disabled = false;
+
+                    setStatus("offline", "● OFFLINE");
+                    errorMsg.innerText = "エラー: サーバーにアクセスできませんでした";
+                    errorMsg.classList.remove('hidden');
+                };
+
+                imgTester.src = realUrl + "/static/favicon.ico?_=" + Date.now();
+
+            } catch (e) {
+                btn.disabled = false;
+                errorMsg.innerText = e.message || genericError;
+                errorMsg.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+
+</html>
